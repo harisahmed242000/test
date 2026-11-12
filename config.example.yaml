@@ -1,0 +1,62 @@
+# Copy this file to config.yaml and fill in real values.
+# Every account listed here should be one YOU own/control and have
+# explicit permission to send from. Never point this at accounts you
+# don't control.
+#
+# Each account has a "role":
+#   sender    - SMTP only. Used to send warmup mail (e.g. a Mailgun domain,
+#               which has no mailbox/IMAP of its own).
+#   receiver  - IMAP only. Used to receive, read, and rescue-from-spam.
+#               Optionally also give it smtp_* fields so it can send
+#               replies back (e.g. your own Gmail can do both).
+#   both      - has both IMAP and SMTP fields; used as sender and receiver.
+#
+# The thing actually being "warmed" is whichever domain/IP your senders
+# send from, so make sure SPF/DKIM/DMARC are configured for that domain.
+
+accounts:
+  # Sender: Mailgun (shared IP) - SMTP only, no mailbox/IMAP.
+  - email: "warmer@yourmailgundomain.com"
+    role: "sender"
+    smtp_host: "smtp.mailgun.org"
+    smtp_port: 587
+    smtp_use_ssl: false
+    smtp_username: "postmaster@yourmailgundomain.com"   # Mailgun SMTP username
+    smtp_password: "MAILGUN_SMTP_PASSWORD"
+
+  # Receiver: your personal Gmail - IMAP to receive/read/rescue, and SMTP
+  # so it can also send replies back (optional - omit smtp_* to skip replies).
+  - email: "youraddress@gmail.com"
+    role: "both"
+    imap_host: "imap.gmail.com"
+    imap_port: 993
+    imap_username: "youraddress@gmail.com"
+    imap_password: "GMAIL_APP_PASSWORD"      # Gmail: use an App Password
+    smtp_host: "smtp.gmail.com"
+    smtp_port: 587
+    smtp_use_ssl: false
+    smtp_username: "youraddress@gmail.com"
+    smtp_password: "GMAIL_APP_PASSWORD"
+
+  # A second receiver is recommended so warmup mail isn't all landing in
+  # one personal inbox. Add more "receiver" or "both" accounts as needed.
+  - email: "second.receiver@gmail.com"
+    role: "receiver"
+    imap_host: "imap.gmail.com"
+    imap_port: 993
+    imap_username: "second.receiver@gmail.com"
+    imap_password: "GMAIL_APP_PASSWORD_2"
+
+settings:
+  start_date: "2026-11-12"      # YYYY-MM-DD, day 0 of the ramp (set once, don't change)
+  base_daily_volume: 3          # emails/day per account on day 0
+  daily_increment: 1            # +N emails/day target, each day
+  max_daily_volume: 25          # cap per account per day
+  business_hour_start: 8        # local hour warming traffic is allowed to start
+  business_hour_end: 19         # and stop
+  timezone_offset_hours: 0      # offset from UTC for the business-hour window above
+  reply_probability: 0.35       # chance an unread warmer message gets a reply
+  mark_read_probability: 0.9    # chance an unread warmer message just gets opened/read
+  spam_folders: ["Spam", "Junk", "[Gmail]/Spam"]   # folder names to check + rescue from
+  state_file: "state.json"
+  log_file: "warmer.log"
